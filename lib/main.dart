@@ -1,175 +1,123 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(MaterialApp(home: Profile()));
+  runApp(MaterialApp(home: Dashboard()));
 }
 
-class Profile extends StatelessWidget {
-  const Profile({super.key});
+class Dashboard extends StatelessWidget {
+  const Dashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Questify'),
-        backgroundColor: const Color.fromARGB(255, 45, 162, 22),
+        title: Text(
+          'Questify',
+          style: TextStyle(color: Color.fromARGB(255, 172, 245, 0)),
+        ),
+        actions: <Widget>[
+          IconButton(onPressed: () {}, icon: const Icon(Icons.account_circle)),
+        ],
         shadowColor: const Color.fromARGB(255, 121, 3, 25),
         surfaceTintColor: Colors.black87,
       ),
-      body: Container(
-        padding: EdgeInsets.fromLTRB(0, 50, 0, 0),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'User Profile',
-              style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+              'Your Quest',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 172, 245, 0),
+              ),
             ),
-            Icon(Icons.account_circle, size: 100),
+            SizedBox(height: 20),
             Container(
-              padding: EdgeInsets.fromLTRB(30, 20, 0, 0),
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Name',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(Icons.bolt, color: Colors.orange),
+                      title: Text('5km Jogging'),
+                      subtitle: Text('Reward: 1000 Gold'),
+                      trailing: ElevatedButton(
+                        onPressed: () {},
+                        child: Text('Accept'),
                       ),
-                    ],
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(Icons.forest, color: Colors.green),
+                      title: Text('Walk outside'),
+                      subtitle: Text('Reward: 500 Gold'),
+                      trailing: ElevatedButton(
+                        onPressed: () {},
+                        child: Text('Accept'),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(Icons.favorite, color: Colors.purple),
+                      title: Text('Learn new things'),
+                      subtitle: Text('Reward: 2000 Gold'),
+                      trailing: ElevatedButton(
+                        onPressed: () {},
+                        child: Text('Accept'),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 5, 0, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'James Rhoey P. De Castro',
-                        style: TextStyle(fontStyle: FontStyle.italic),
-                      ),
-                    ],
+            SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Column(
+                    children: [Icon(Icons.task, size: 50), Text('Quests')],
                   ),
-                ],
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 10, 0, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Email',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 5, 0, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'jamesrhoeydecastro7@gmail.com',
-                        style: TextStyle(fontStyle: FontStyle.italic),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 10, 0, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Company',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 5, 0, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Batangas State University TNEU Balayan',
-                        style: TextStyle(fontStyle: FontStyle.italic),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 10, 0, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Contact Number',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 5, 0, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '09777404043',
-                        style: TextStyle(fontStyle: FontStyle.italic),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              margin: EdgeInsets.fromLTRB(0, 170, 0, 0),
-              padding: EdgeInsets.all(10),
-              child: ElevatedButton(
-                onPressed: () {},
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-
-                  children: [Icon(Icons.logout), Text('Logout')],
                 ),
-              ),
+                SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Column(
+                    children: [Icon(Icons.shop, size: 50), Text('Shop')],
+                  ),
+                ),
+              ],
             ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Column(
+                    children: [Icon(Icons.person, size: 50), Text('Character')],
+                  ),
+                ),
+                SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Column(
+                    children: [
+                      Icon(Icons.settings, size: 50),
+                      Text('Settings'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 40),
           ],
         ),
       ),
