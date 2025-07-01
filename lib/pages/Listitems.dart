@@ -28,6 +28,9 @@ class _ListitemsState extends State<Listitems> {
         title: Text('Quests',
          style: TextStyle(
           fontWeight: FontWeight.bold, color: Colors.green),),
+        iconTheme: IconThemeData(
+          color: Colors.green,
+        ),
       ),
       body: Container(
         color: const Color.fromARGB(255, 28, 27, 23),
@@ -58,7 +61,13 @@ class _ListitemsState extends State<Listitems> {
             ),
           ],
         ),
-      )
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: (){
+          Navigator.pushNamed(context, '/add');
+        }, 
+        backgroundColor: Colors.green,
+        child: Icon(Icons.add)),
     );
   }
 }
