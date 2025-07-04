@@ -8,7 +8,7 @@ class Avatar {
   final String description;
   final int cost;
   final AvatarRarity rarity;
-  final IconData icon;
+  final String imagePath;
   final Color color;
   final bool isUnlocked;
 
@@ -18,7 +18,7 @@ class Avatar {
     required this.description,
     required this.cost,
     required this.rarity,
-    required this.icon,
+    required this.imagePath,
     required this.color,
     this.isUnlocked = false,
   });
@@ -60,7 +60,7 @@ class AvatarCollection {
         description: 'A brave warrior ready for any quest',
         cost: 300,
         rarity: AvatarRarity.common,
-        icon: Icons.person,
+        imagePath: 'assets/avatars/warrior.webp',
         color: Colors.brown,
       ),
       const Avatar(
@@ -69,7 +69,7 @@ class AvatarCollection {
         description: 'A wise mage with magical powers',
         cost: 300,
         rarity: AvatarRarity.common,
-        icon: Icons.auto_awesome,
+        imagePath: 'assets/avatars/mage.webp',
         color: Colors.purple,
       ),
       const Avatar(
@@ -78,7 +78,7 @@ class AvatarCollection {
         description: 'A skilled archer with precise aim',
         cost: 300,
         rarity: AvatarRarity.common,
-        icon: Icons.visibility,
+        imagePath: 'assets/avatars/c3.webp',
         color: Colors.green,
       ),
       const Avatar(
@@ -87,7 +87,7 @@ class AvatarCollection {
         description: 'A noble knight in shining armor',
         cost: 300,
         rarity: AvatarRarity.common,
-        icon: Icons.security,
+        imagePath: 'assets/avatars/c4.webp',
         color: Colors.grey,
       ),
 
@@ -98,7 +98,7 @@ class AvatarCollection {
         description: 'A legendary hero who defeated dragons',
         cost: 500,
         rarity: AvatarRarity.rare,
-        icon: Icons.local_fire_department,
+        imagePath: 'assets/avatars/c5.webp',
         color: Colors.red,
       ),
       const Avatar(
@@ -107,7 +107,7 @@ class AvatarCollection {
         description: 'A stealthy ninja master',
         cost: 500,
         rarity: AvatarRarity.rare,
-        icon: Icons.visibility_off,
+        imagePath: 'assets/avatars/c6.webp',
         color: Colors.black,
       ),
       const Avatar(
@@ -116,7 +116,7 @@ class AvatarCollection {
         description: 'A powerful wizard with ancient knowledge',
         cost: 500,
         rarity: AvatarRarity.rare,
-        icon: Icons.psychology,
+        imagePath: 'assets/avatars/c7.webp',
         color: Colors.indigo,
       ),
       const Avatar(
@@ -125,7 +125,7 @@ class AvatarCollection {
         description: 'A holy warrior with divine powers',
         cost: 500,
         rarity: AvatarRarity.rare,
-        icon: Icons.church,
+        imagePath: 'assets/avatars/c8.webp',
         color: Colors.yellow,
       ),
 
@@ -136,7 +136,7 @@ class AvatarCollection {
         description: 'A mythical phoenix reborn from ashes',
         cost: 750,
         rarity: AvatarRarity.epic,
-        icon: Icons.flutter_dash,
+        imagePath: 'assets/avatars/c9.webp',
         color: Colors.orange,
       ),
       const Avatar(
@@ -145,7 +145,7 @@ class AvatarCollection {
         description: 'A deadly assassin from the shadows',
         cost: 750,
         rarity: AvatarRarity.epic,
-        icon: Icons.dark_mode,
+        imagePath: 'assets/avatars/c10.webp',
         color: Colors.deepPurple,
       ),
       const Avatar(
@@ -154,7 +154,7 @@ class AvatarCollection {
         description: 'A mage wielding crystal magic',
         cost: 750,
         rarity: AvatarRarity.epic,
-        icon: Icons.diamond,
+        imagePath: 'assets/avatars/c11.webp',
         color: Colors.cyan,
       ),
       const Avatar(
@@ -163,7 +163,7 @@ class AvatarCollection {
         description: 'A master who controls time itself',
         cost: 750,
         rarity: AvatarRarity.epic,
-        icon: Icons.schedule,
+        imagePath: 'assets/avatars/c12.webp',
         color: Colors.teal,
       ),
 
@@ -174,7 +174,7 @@ class AvatarCollection {
         description: 'The ultimate quest master',
         cost: 1000,
         rarity: AvatarRarity.legendary,
-        icon: Icons.auto_awesome,
+        imagePath: 'assets/avatars/c13.webp',
         color: Colors.amber,
       ),
       const Avatar(
@@ -183,7 +183,7 @@ class AvatarCollection {
         description: 'A legend that will never fade',
         cost: 1000,
         rarity: AvatarRarity.legendary,
-        icon: Icons.star,
+        imagePath: 'assets/avatars/c14.webp',
         color: Colors.yellow,
       ),
       const Avatar(
@@ -192,7 +192,7 @@ class AvatarCollection {
         description: 'A warrior from the cosmos',
         cost: 1000,
         rarity: AvatarRarity.legendary,
-        icon: Icons.rocket_launch,
+        imagePath: 'assets/avatars/c15.webp',
         color: Colors.deepPurple,
       ),
       const Avatar(
@@ -201,7 +201,7 @@ class AvatarCollection {
         description: 'Master of infinite possibilities',
         cost: 1000,
         rarity: AvatarRarity.legendary,
-        icon: Icons.all_inclusive,
+        imagePath: 'assets/avatars/c16.webp',
         color: Colors.pink,
       ),
     ];
@@ -214,7 +214,7 @@ class AvatarCollection {
       description: 'Default avatar',
       cost: 0,
       rarity: AvatarRarity.common,
-      icon: Icons.person,
+      imagePath: 'assets/avatars/default.png',
       color: Colors.grey,
       isUnlocked: true,
     );

@@ -150,16 +150,18 @@ class _CharacterState extends State<Character> {
                       child: Row(
                         children: [
                           // Avatar
-                          Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: currentAvatar.color.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Icon(
-                              currentAvatar.icon,
-                              color: currentAvatar.color,
-                              size: 48,
+                          ClipOval(
+                            child: Image.asset(
+                              currentAvatar.imagePath,
+                              width: 64,
+                              height: 64,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(
+                                    Icons.person,
+                                    color: currentAvatar.color,
+                                    size: 48,
+                                  ),
                             ),
                           ),
                           SizedBox(width: 16),

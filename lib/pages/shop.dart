@@ -307,7 +307,22 @@ class _ShopState extends State<Shop> {
                       topRight: Radius.circular(12),
                     ),
                   ),
-                  child: Icon(avatar.icon, color: avatar.color, size: 36),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                    child: Image.asset(
+                      avatar.imagePath,
+                      fit: BoxFit.cover,
+                      width: 48,
+                      height: 48,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey[300],
+                        child: Icon(Icons.person, color: Colors.grey, size: 36),
+                      ),
+                    ),
+                  ),
                 ),
               ),
 

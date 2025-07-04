@@ -130,9 +130,15 @@ class _DashboardState extends State<Dashboard> {
               onTap: () {
                 Navigator.pushNamed(context, '/character');
               },
-              child: CircleAvatar(
-                backgroundColor: currentAvatar.color.withOpacity(0.2),
-                child: Icon(currentAvatar.icon, color: currentAvatar.color),
+              child: ClipOval(
+                child: Image.asset(
+                  currentAvatar.imagePath,
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.person, color: currentAvatar.color, size: 24),
+                ),
               ),
             ),
           ),
