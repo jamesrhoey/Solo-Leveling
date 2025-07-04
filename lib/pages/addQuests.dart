@@ -197,6 +197,7 @@ class _AddQuestsState extends State<AddQuests> {
                         value: selectedCategory,
                         style: TextStyle(color: Colors.white),
                         dropdownColor: Color.fromARGB(255, 53, 51, 51),
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Category',
                           labelStyle: TextStyle(color: Colors.white),
@@ -220,6 +221,7 @@ class _AddQuestsState extends State<AddQuests> {
                           return DropdownMenuItem(
                             value: category,
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   category == QuestCategory.health
@@ -255,7 +257,12 @@ class _AddQuestsState extends State<AddQuests> {
                                   size: 20,
                                 ),
                                 SizedBox(width: 8),
-                                Text(category.name.toUpperCase()),
+                                Flexible(
+                                  child: Text(
+                                    category.name.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ],
                             ),
                           );
@@ -274,6 +281,7 @@ class _AddQuestsState extends State<AddQuests> {
                         value: selectedDifficulty,
                         style: TextStyle(color: Colors.white),
                         dropdownColor: Color.fromARGB(255, 53, 51, 51),
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Difficulty',
                           labelStyle: TextStyle(color: Colors.white),
@@ -297,6 +305,7 @@ class _AddQuestsState extends State<AddQuests> {
                           return DropdownMenuItem(
                             value: difficulty,
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.trending_up,
@@ -308,7 +317,12 @@ class _AddQuestsState extends State<AddQuests> {
                                   size: 20,
                                 ),
                                 SizedBox(width: 8),
-                                Text(difficulty.name.toUpperCase()),
+                                Flexible(
+                                  child: Text(
+                                    difficulty.name.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ],
                             ),
                           );

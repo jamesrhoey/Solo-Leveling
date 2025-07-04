@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_app/pages/Quests.dart';
+import 'package:my_app/services/user_service.dart';
 
 class QuestService {
   static const String _questsKey = 'quests';
@@ -44,6 +45,22 @@ class QuestService {
     return completedQuests.take(limit).toList();
   }
 
+  // Update quest
+  static Future<void> updateQuest(Quests updatedQuest) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> questsJson = prefs.getStringList(_questsKey) ?? [];
+
+    for (int i = 0; i < questsJson.length; i++) {
+      final quest = _questFromJson(questsJson[i]);
+      if (quest.title == updatedQuest.title) {
+        questsJson[i] = _questToJson(updatedQuest);
+        break;
+      }
+    }
+
+    await prefs.setStringList(_questsKey, questsJson);
+  }
+
   // Update quest status
   static Future<void> updateQuestStatus(
     String questTitle,
@@ -61,6 +78,30 @@ class QuestService {
           if (quest.isDaily) {
             quest.streak++;
           }
+
+          // Apply boosters and add rewards to user
+          final calculatedExp = quest.calculatedExp;
+          final calculatedGold = quest.calculatedGold;
+
+          // Check for active boosters
+          final isXPBoosterActive = await UserService.isXPBoosterActive();
+          final isGoldBoosterActive = await UserService.isGoldBoosterActive();
+
+          double finalExp = calculatedExp;
+          double finalGold = calculatedGold;
+
+          if (isXPBoosterActive) {
+            finalExp *= 2.0; // 2x XP booster
+            await UserService.consumeXPBooster();
+          }
+
+          if (isGoldBoosterActive) {
+            finalGold *= 1.5; // 1.5x Gold booster
+            await UserService.consumeGoldBooster();
+          }
+
+          // Add rewards to user
+          await UserService.addGold(finalGold.toInt());
         }
         questsJson[i] = _questToJson(quest);
         break;

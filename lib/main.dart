@@ -9,6 +9,7 @@ import 'package:my_app/pages/character.dart';
 void main() {
   runApp(
     MaterialApp(
+      debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => MainNavigation(),
         '/quest': (context) => Listitems(),

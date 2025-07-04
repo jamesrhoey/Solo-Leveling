@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:my_app/pages/Quests.dart';
 import 'package:my_app/pages/questCard.dart';
 import 'package:my_app/services/quest_service.dart';
+import 'package:my_app/services/user_service.dart';
+import 'package:my_app/models/shop_items.dart';
 
 class Listitems extends StatefulWidget {
   const Listitems({super.key});
@@ -17,6 +19,9 @@ class _ListitemsState extends State<Listitems> {
   String searchQuery = '';
   bool isLoading = true;
 
+  // User inventory for items
+  Map<String, int> inventory = {};
+
   @override
   void initState() {
     super.initState();
@@ -30,8 +35,11 @@ class _ListitemsState extends State<Listitems> {
 
     try {
       final loadedQuests = await QuestService.getAllQuests();
+      final userInventory = await UserService.getUserInventory();
+
       setState(() {
         quests = loadedQuests;
+        inventory = userInventory;
         isLoading = false;
       });
     } catch (e) {
@@ -216,6 +224,38 @@ class _ListitemsState extends State<Listitems> {
                   ),
                 ],
               ),
+
+              // Item usage options
+              if (quest.deadline != null &&
+                  inventory['quest_extension'] != null &&
+                  inventory['quest_extension']! > 0) ...[
+                SizedBox(height: 16),
+                Divider(color: Colors.white24),
+                SizedBox(height: 8),
+                Text(
+                  'Use Items',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _useQuestExtension(quest);
+                  },
+                  icon: Icon(Icons.schedule, size: 16),
+                  label: Text(
+                    'Extend Deadline (${inventory['quest_extension']} available)',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -227,6 +267,48 @@ class _ListitemsState extends State<Listitems> {
         ],
       ),
     );
+  }
+
+  Future<void> _useQuestExtension(Quests quest) async {
+    final success = await UserService.useQuestExtension();
+    if (success) {
+      // Update the quest deadline
+      final updatedQuest = Quests(
+        title: quest.title,
+        description: quest.description,
+        status: quest.status,
+        gold: quest.gold,
+        exp: quest.exp,
+        difficulty: quest.difficulty,
+        category: quest.category,
+        deadline: quest.deadline?.add(Duration(days: 1)),
+        isDaily: quest.isDaily,
+        createdAt: quest.createdAt,
+        completedAt: quest.completedAt,
+        streak: quest.streak,
+        notes: quest.notes,
+      );
+
+      // Save the updated quest
+      await QuestService.updateQuest(updatedQuest);
+
+      // Reload data
+      await _loadQuests();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Quest deadline extended by 24 hours!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No quest extensions available!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

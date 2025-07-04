@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/pages/Quests.dart';
 import 'package:my_app/services/quest_service.dart';
+import 'package:my_app/services/user_service.dart';
+import 'package:my_app/models/ranking_system.dart';
+import 'package:my_app/models/avatar.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -12,13 +15,23 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   // Data that will be loaded from the service
   double totalXP = 0;
-  double totalGold = 0;
+  double userGold = 0;
   int level = 1;
   int completedQuests = 0;
   int pendingQuests = 0;
   int dailyStreak = 0;
   List<Quests> recentQuests = [];
   bool isLoading = true;
+
+  // Ranking system data
+  Rank currentRank = Rank.bronzeV;
+  RankRewards rankRewards = RankingSystem.getRankRewards(Rank.bronzeV);
+  int xpRequired = 0;
+  double rankProgress = 0.0;
+
+  // Avatar data
+  String currentAvatarId = 'default';
+  Avatar currentAvatar = AvatarCollection.getDefaultAvatar();
 
   @override
   void initState() {
@@ -43,14 +56,39 @@ class _DashboardState extends State<Dashboard> {
         limit: 5,
       );
 
+      // Load user data
+      final userGold = await UserService.getUserGold();
+      final currentAvatarId = await UserService.getCurrentAvatar();
+
+      // Load ranking data
+      final rankInfo = await UserService.getRankInfo(stats['totalXP']);
+
+      // Get current avatar
+      final avatars = AvatarCollection.getAllAvatars();
+      final currentAvatar = avatars.firstWhere(
+        (a) => a.id == currentAvatarId,
+        orElse: () => AvatarCollection.getDefaultAvatar(),
+      );
+
       setState(() {
         totalXP = stats['totalXP'];
-        totalGold = stats['totalGold'];
+        this.userGold = userGold.toDouble();
         level = stats['level'];
         completedQuests = stats['completedQuests'];
         pendingQuests = stats['pendingQuests'];
         dailyStreak = stats['dailyStreak'];
         recentQuests = recentCompletedQuests;
+
+        // Ranking data
+        currentRank = rankInfo['currentRank'];
+        rankRewards = rankInfo['rankRewards'];
+        xpRequired = rankInfo['xpRequired'];
+        rankProgress = rankInfo['progress'];
+
+        // Avatar data
+        this.currentAvatarId = currentAvatarId;
+        this.currentAvatar = currentAvatar;
+
         isLoading = false;
       });
     } catch (e) {
@@ -85,10 +123,18 @@ class _DashboardState extends State<Dashboard> {
         ),
         iconTheme: IconThemeData(color: Color.fromARGB(255, 172, 245, 0)),
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _loadData,
-            tooltip: 'Refresh',
+          // Profile Avatar
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/character');
+              },
+              child: CircleAvatar(
+                backgroundColor: currentAvatar.color.withOpacity(0.2),
+                child: Icon(currentAvatar.icon, color: currentAvatar.color),
+              ),
+            ),
           ),
         ],
       ),
@@ -144,6 +190,34 @@ class _DashboardState extends State<Dashboard> {
                             'Level $level • $dailyStreak day streak',
                             style: TextStyle(
                               fontSize: 16,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          // Rank Display
+                          Row(
+                            children: [
+                              Icon(
+                                rankRewards.rankIcon,
+                                color: rankRewards.rankColor,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                rankRewards.title,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: rankRewards.rankColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            rankRewards.description,
+                            style: TextStyle(
+                              fontSize: 12,
                               color: Colors.white70,
                             ),
                           ),
@@ -214,7 +288,7 @@ class _DashboardState extends State<Dashboard> {
                                 ),
                                 SizedBox(height: 8),
                                 Text(
-                                  totalGold.toStringAsFixed(0),
+                                  userGold.toStringAsFixed(0),
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -233,6 +307,86 @@ class _DashboardState extends State<Dashboard> {
                           ),
                         ),
                       ],
+                    ),
+                    SizedBox(height: 16),
+
+                    // Rank Progress
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(255, 53, 51, 51),
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: rankRewards.rankColor.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                rankRewards.rankIcon,
+                                color: rankRewards.rankColor,
+                                size: 24,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Rank Progress',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      rankRewards.title,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: rankRewards.rankColor,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${totalXP.toInt()} / ${(totalXP + xpRequired).toInt()} XP',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (xpRequired > 0)
+                                Text(
+                                  '${xpRequired} XP to next rank',
+                                  style: TextStyle(
+                                    color: rankRewards.rankColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          LinearProgressIndicator(
+                            value: rankProgress,
+                            backgroundColor: Colors.grey[700],
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              rankRewards.rankColor,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     SizedBox(height: 16),
 
