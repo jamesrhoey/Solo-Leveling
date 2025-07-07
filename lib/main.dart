@@ -1,22 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/World_time/choose_location.dart';
+import 'package:my_app/World_time/loading.dart';
 import 'package:my_app/pages/Listitems.dart';
 import 'package:my_app/pages/addQuests.dart';
 import 'package:my_app/pages/dashboard.dart';
 import 'package:my_app/pages/settings.dart';
 import 'package:my_app/pages/shop.dart';
 import 'package:my_app/pages/character.dart';
+import 'package:my_app/World_time/home.dart';
+import 'package:my_app/World_time/loading.dart';
+import 'package:my_app/World_time/choose_location.dart';
 
 void main() {
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
+      initialRoute: '/',
       routes: {
-        '/': (context) => MainNavigation(),
+        '/wait': (context) => MainNavigation(),
         '/quest': (context) => Listitems(),
         '/add': (context) => AddQuests(),
         '/settings': (context) => Settings(),
         '/shop': (context) => Shop(),
         '/character': (context) => Character(),
+
+
+        //world time
+
+        '/' : (context) => Loading(),
+        '/home' : (context) => Home(),
+        '/location' : (context) => ChooseLocation(),
+
       },
     ),
   );

@@ -157,6 +157,14 @@ class _DashboardState extends State<Dashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                     Text(
+                            'Welcome back, Rowi!',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color.fromARGB(255, 172, 245, 0),
+                            ),
+                          ),
                     // Welcome Section
                     Container(
                       width: double.infinity,
@@ -183,14 +191,7 @@ class _DashboardState extends State<Dashboard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Welcome back, Rowi!',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 172, 245, 0),
-                            ),
-                          ),
+                         
                           SizedBox(height: 8),
                           Text(
                             'Level $level • $dailyStreak day streak',
