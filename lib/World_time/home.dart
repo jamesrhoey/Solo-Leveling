@@ -44,7 +44,7 @@ class _HomeState extends State<Home> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(data['location'] ?? 'Loading...',
+                Text(data['location'] ?? '',
                 style: TextStyle(
                   fontSize: 28,
                   letterSpacing: 2,
@@ -53,7 +53,7 @@ class _HomeState extends State<Home> {
               ],
             ),
             SizedBox(height: 20,),
-            Text(data['time'] ?? 'Loading...',
+            Text(data['time'] ?? '',
             style: TextStyle(fontSize: 66),
             )
 

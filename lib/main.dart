@@ -8,8 +8,6 @@ import 'package:my_app/pages/settings.dart';
 import 'package:my_app/pages/shop.dart';
 import 'package:my_app/pages/character.dart';
 import 'package:my_app/World_time/home.dart';
-import 'package:my_app/World_time/loading.dart';
-import 'package:my_app/World_time/choose_location.dart';
 
 void main() {
   runApp(
