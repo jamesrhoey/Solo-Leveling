@@ -9,11 +9,12 @@ class WorldTime {
   String time = ''; //time in that location
   String flag; //url to an asset flag icon
   String url; //this is the location url for the api endpoint
+  bool isDaytime = true; //true or false if the time is day
 
   WorldTime({ required this.location, required this.flag,required this.url});
 
 
-  Future<void> geTime() async{
+  Future<void> getTime() async{
 
     try {
       Response response = await get(
@@ -31,17 +32,19 @@ class WorldTime {
       //create a datetime object
       DateTime now = DateTime.parse(datetime);
 
+      // set isDaytime based on hour
+      isDaytime = now.hour >= 6 && now.hour < 18;
+
       //set time property
       time = DateFormat.jm().format(now);
     } 
     catch (e) {
       print('caught error : $e');
       time = 'could not get time data';
+      isDaytime = true;
     }
     
     //simulate network request
    
   }
 }
-
-
