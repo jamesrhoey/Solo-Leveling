@@ -72,8 +72,10 @@ class _SettingsState extends State<Settings> {
                           Icons.arrow_forward_ios,
                           color: Colors.white70,
                         ),
-                        onTap: () {
-                          Navigator.pushNamed(context, '/shop');
+                        onTap: () async {
+                          await Navigator.pushNamed(context, '/shop');
+                          // Refresh data when returning from shop
+                          setState(() {});
                         },
                       ),
                     ),
@@ -103,8 +105,10 @@ class _SettingsState extends State<Settings> {
                           Icons.arrow_forward_ios,
                           color: Colors.white70,
                         ),
-                        onTap: () {
-                          Navigator.pushNamed(context, '/character');
+                        onTap: () async {
+                          await Navigator.pushNamed(context, '/character');
+                          // Refresh data when returning from character
+                          setState(() {});
                         },
                       ),
                     ),

@@ -3,7 +3,7 @@ import 'package:my_app/pages/Quests.dart';
 import 'package:my_app/pages/questCard.dart';
 import 'package:my_app/services/quest_service.dart';
 import 'package:my_app/services/user_service.dart';
-import 'package:my_app/models/shop_items.dart';
+import 'package:my_app/services/lazy_loading_service.dart';
 
 class Listitems extends StatefulWidget {
   const Listitems({super.key});
@@ -26,6 +26,13 @@ class _ListitemsState extends State<Listitems> {
   void initState() {
     super.initState();
     _loadQuests();
+    _preloadData();
+  }
+
+  // Preload data in background
+  void _preloadData() {
+    LazyLoadingService.preloadData('all_quests', () => QuestService.getAllQuests());
+    LazyLoadingService.preloadData('user_inventory', () => UserService.getUserInventory());
   }
 
   Future<void> _loadQuests() async {
@@ -34,8 +41,17 @@ class _ListitemsState extends State<Listitems> {
     });
 
     try {
-      final loadedQuests = await QuestService.getAllQuests();
-      final userInventory = await UserService.getUserInventory();
+      // Check for daily quest streak loss
+      await QuestService.checkDailyQuestStreakLoss();
+      
+      // Load data with lazy loading
+      final batchResults = await LazyLoadingService.batchLoadData({
+        'all_quests': () => QuestService.getAllQuests(),
+        'user_inventory': () => UserService.getUserInventory(),
+      });
+
+      final loadedQuests = batchResults['all_quests'] as List<Quests>;
+      final userInventory = batchResults['user_inventory'] as Map<String, int>;
 
       setState(() {
         quests = loadedQuests;
@@ -48,6 +64,13 @@ class _ListitemsState extends State<Listitems> {
         isLoading = false;
       });
     }
+  }
+
+  // Refresh data (clear cache and reload)
+  Future<void> _refreshQuests() async {
+    LazyLoadingService.clearCache('all_quests');
+    LazyLoadingService.clearCache('user_inventory');
+    await _loadQuests();
   }
 
   List<Quests> get incompleteQuests {
@@ -150,7 +173,7 @@ class _ListitemsState extends State<Listitems> {
       await QuestService.updateQuestStatus(quest.title, newStatus);
 
       // Reload quests to get updated data
-      await _loadQuests();
+      await _refreshQuests();
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -166,6 +189,75 @@ class _ListitemsState extends State<Listitems> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<void> _deleteQuest(Quests quest) async {
+    // Show confirmation dialog
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color.fromARGB(255, 53, 51, 51),
+        title: const Text(
+          'Delete Quest',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${quest.title}"? This action cannot be undone.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      try {
+        final success = await QuestService.deleteQuest(quest.title);
+        if (success) {
+          // Reload quests to get updated data
+          await _refreshQuests();
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Quest "${quest.title}" deleted successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cannot delete completed or failed quests!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting quest: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -291,8 +383,7 @@ class _ListitemsState extends State<Listitems> {
               ),
 
               // Item usage options
-              if (quest.deadline != null &&
-                  inventory['quest_extension'] != null &&
+              if (inventory['quest_extension'] != null &&
                   inventory['quest_extension']! > 0) ...[
                 SizedBox(height: 16),
                 Divider(color: Colors.white24),
@@ -313,7 +404,9 @@ class _ListitemsState extends State<Listitems> {
                   },
                   icon: Icon(Icons.schedule, size: 16),
                   label: Text(
-                    'Extend Deadline (${inventory['quest_extension']} available)',
+                    quest.deadline != null 
+                        ? 'Extend Deadline (${inventory['quest_extension']} available)'
+                        : 'Add Deadline (${inventory['quest_extension']} available)',
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
@@ -338,6 +431,10 @@ class _ListitemsState extends State<Listitems> {
     final success = await UserService.useQuestExtension();
     if (success) {
       // Update the quest deadline
+      final newDeadline = quest.deadline != null 
+          ? quest.deadline!.add(Duration(days: 1))  // Extend existing deadline
+          : DateTime.now().add(Duration(days: 1));  // Add new deadline
+      
       final updatedQuest = Quests(
         title: quest.title,
         description: quest.description,
@@ -346,7 +443,7 @@ class _ListitemsState extends State<Listitems> {
         exp: quest.exp,
         difficulty: quest.difficulty,
         category: quest.category,
-        deadline: quest.deadline?.add(Duration(days: 1)),
+        deadline: newDeadline,
         isDaily: quest.isDaily,
         createdAt: quest.createdAt,
         completedAt: quest.completedAt,
@@ -360,9 +457,10 @@ class _ListitemsState extends State<Listitems> {
       // Reload data
       await _loadQuests();
 
+      final action = quest.deadline != null ? 'extended by 24 hours' : 'deadline added (24 hours)';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Quest deadline extended by 24 hours!'),
+          content: Text('Quest $action!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -532,7 +630,10 @@ class _ListitemsState extends State<Listitems> {
                         ],
                       ),
                     )
-                  : ListView(
+                  : RefreshIndicator(
+                    onRefresh: _refreshQuests,
+                    color: Color.fromARGB(255, 172, 245, 0),
+                    child: ListView(
                       padding: EdgeInsets.all(16),
                       children: [
                         // Incomplete Quests Section
@@ -566,6 +667,10 @@ class _ListitemsState extends State<Listitems> {
                               quests: quest,
                               onTap: () => _showQuestDetails(quest),
                               onStatusChange: () => _updateQuestStatus(quest),
+                              onDelete: () => _deleteQuest(quest),
+                              inventory: inventory,
+                              onInventoryUpdate: _loadQuests,
+                              onQuestUpdate: _loadQuests,
                             ),
                           )),
                           SizedBox(height: 24),
@@ -602,11 +707,15 @@ class _ListitemsState extends State<Listitems> {
                               quests: quest,
                               onTap: () => _showQuestDetails(quest),
                               onStatusChange: () => _updateQuestStatus(quest),
+                              inventory: inventory,
+                              onInventoryUpdate: _loadQuests,
+                              onQuestUpdate: _loadQuests,
                             ),
                           )),
                         ],
                       ],
                     ),
+                  ),
             ),
           ],
         ),

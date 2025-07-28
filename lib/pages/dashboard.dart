@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/pages/Quests.dart';
 import 'package:my_app/services/quest_service.dart';
 import 'package:my_app/services/user_service.dart';
+import 'package:my_app/services/lazy_loading_service.dart';
 import 'package:my_app/models/ranking_system.dart';
 import 'package:my_app/models/avatar.dart';
 
@@ -33,10 +34,30 @@ class _DashboardState extends State<Dashboard> {
   String currentAvatarId = 'default';
   Avatar currentAvatar = AvatarCollection.getDefaultAvatar();
 
+  // Active booster status
+  bool xpBoosterActive = false;
+  bool goldBoosterActive = false;
+  bool streakProtectionActive = false;
+  int xpBoosterQuestsLeft = 0;
+  int goldBoosterQuestsLeft = 0;
+
+  // Shop notification
+  bool hasAffordableItems = false;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _preloadData();
+  }
+
+  // Preload data in background
+  void _preloadData() {
+    LazyLoadingService.preloadData('quest_stats', () => QuestService.getQuestStats());
+    LazyLoadingService.preloadData('recent_quests', () => QuestService.getCompletedQuests(limit: 5));
+    LazyLoadingService.preloadData('user_gold', () => UserService.getUserGold());
+    LazyLoadingService.preloadData('user_data', () => UserService.getUserData());
+    LazyLoadingService.preloadData('affordable_items', () => UserService.hasAffordableItems());
   }
 
   Future<void> _loadData() async {
@@ -47,23 +68,30 @@ class _DashboardState extends State<Dashboard> {
     try {
       // Initialize sample data if needed
       await QuestService.initializeSampleData();
+      
+      // Check for daily quest streak loss
+      await QuestService.checkDailyQuestStreakLoss();
 
-      // Load quest statistics
-      final stats = await QuestService.getQuestStats();
+      // Load data with lazy loading
+      final batchResults = await LazyLoadingService.batchLoadData({
+        'quest_stats': () => QuestService.getQuestStats(),
+        'recent_quests': () => QuestService.getCompletedQuests(limit: 5),
+        'user_gold': () => UserService.getUserGold(),
+        'user_data': () => UserService.getUserData(),
+        'affordable_items': () => UserService.hasAffordableItems(),
+      });
 
-      // Load recent completed quests
-      final recentCompletedQuests = await QuestService.getCompletedQuests(
-        limit: 5,
-      );
-
-      // Load user data
-      final userGold = await UserService.getUserGold();
-      final currentAvatarId = await UserService.getCurrentAvatar();
+      final stats = batchResults['quest_stats'] as Map<String, dynamic>;
+      final recentCompletedQuests = batchResults['recent_quests'] as List<Quests>;
+      final userGold = batchResults['user_gold'] as int;
+      final userData = batchResults['user_data'] as Map<String, dynamic>;
+      final hasAffordableItems = batchResults['affordable_items'] as bool;
 
       // Load ranking data
       final rankInfo = await UserService.getRankInfo(stats['totalXP']);
 
       // Get current avatar
+      final currentAvatarId = await UserService.getCurrentAvatar();
       final avatars = AvatarCollection.getAllAvatars();
       final currentAvatar = avatars.firstWhere(
         (a) => a.id == currentAvatarId,
@@ -89,6 +117,16 @@ class _DashboardState extends State<Dashboard> {
         this.currentAvatarId = currentAvatarId;
         this.currentAvatar = currentAvatar;
 
+        // Active booster status
+        this.xpBoosterActive = userData['xpBoosterActive'] ?? false;
+        this.goldBoosterActive = userData['goldBoosterActive'] ?? false;
+        this.streakProtectionActive = userData['streakProtectionActive'] ?? false;
+        this.xpBoosterQuestsLeft = userData['xpBoosterQuestsLeft'] ?? 0;
+        this.goldBoosterQuestsLeft = userData['goldBoosterQuestsLeft'] ?? 0;
+
+        // Shop notification
+        this.hasAffordableItems = hasAffordableItems;
+
         isLoading = false;
       });
     } catch (e) {
@@ -97,6 +135,16 @@ class _DashboardState extends State<Dashboard> {
         isLoading = false;
       });
     }
+  }
+
+  // Refresh data (clear cache and reload)
+  Future<void> _refreshData() async {
+    LazyLoadingService.clearCache('quest_stats');
+    LazyLoadingService.clearCache('recent_quests');
+    LazyLoadingService.clearCache('user_gold');
+    LazyLoadingService.clearCache('user_data');
+    LazyLoadingService.clearCache('affordable_items');
+    await _loadData();
   }
 
   @override
@@ -124,12 +172,49 @@ class _DashboardState extends State<Dashboard> {
         ),
         iconTheme: IconThemeData(color: Color.fromARGB(255, 172, 245, 0)),
         actions: [
+          // Shop Button
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Stack(
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, '/shop');
+                    // Refresh data when returning from shop
+                    _refreshData();
+                  },
+                  icon: Icon(
+                    Icons.shop,
+                    color: Color.fromARGB(255, 172, 245, 0),
+                    size: 24,
+                  ),
+                  tooltip: 'Shop',
+                ),
+                // Notification indicator for affordable items
+                if (hasAffordableItems)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
           // Profile Avatar
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/character');
+              onTap: () async {
+                await Navigator.pushNamed(context, '/character');
+                // Refresh data when returning from character page
+                _refreshData();
               },
               child: ClipOval(
                 child: Image.asset(
@@ -153,7 +238,10 @@ class _DashboardState extends State<Dashboard> {
                   color: Color.fromARGB(255, 172, 245, 0),
                 ),
               )
-            : SingleChildScrollView(
+            : RefreshIndicator(
+              onRefresh: _refreshData,
+              color: Color.fromARGB(255, 172, 245, 0),
+              child: SingleChildScrollView(
                 padding: EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,47 +249,221 @@ class _DashboardState extends State<Dashboard> {
                     // Welcome Section
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color.fromARGB(255, 172, 245, 0).withOpacity(0.1),
-                            Color.fromARGB(255, 172, 245, 0).withOpacity(0.05),
+                            const Color.fromARGB(255, 172, 245, 0).withOpacity(0.08),
+                            const Color.fromARGB(255, 172, 245, 0).withOpacity(0.02),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Color.fromARGB(
-                            255,
-                            172,
-                            245,
-                            0,
-                          ).withOpacity(0.3),
+                          color: const Color.fromARGB(255, 172, 245, 0).withOpacity(0.15),
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Header
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(255, 172, 245, 0).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.asset(
+                                    currentAvatar.imagePath,
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Icon(
+                                      Icons.person,
+                                      color: const Color.fromARGB(255, 172, 245, 0),
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                              Text(
+                                      'Welcome back, Phunsukh Wangdu!',
+                                style: TextStyle(
+                                        fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                        color: const Color.fromARGB(255, 172, 245, 0),
+                                ),
+                              ),
                           Text(
-                            'Welcome back, Rowi!',
+                                      'Level $level • $dailyStreak day streak',
                             style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 172, 245, 0),
+                                        fontSize: 14,
+                                        color: Colors.white.withOpacity(0.7),
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Level $level • $dailyStreak day streak',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white70,
-                            ),
+                        ],
+                      ),
+                    ),
+                            ],
                           ),
-                          SizedBox(height: 8),
-                          // Rank Display
+
+                          const SizedBox(height: 16),
+                          
+                          // Stats Row
+                    Row(
+                      children: [
+                              // XP
+                        Expanded(
+                                child: Row(
+                              children: [
+                                Icon(
+                                  Icons.show_chart,
+                                  color: Colors.green,
+                                      size: 18,
+                                ),
+                                    const SizedBox(width: 6),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                Text(
+                                  totalXP.toStringAsFixed(0),
+                                  style: TextStyle(
+                                            fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                Text(
+                                          'XP',
+                                  style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white.withOpacity(0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                                  ],
+                                ),
+                              ),
+                              
+                              // Divider
+                              Container(
+                                width: 1,
+                                height: 30,
+                                color: Colors.white.withOpacity(0.1),
+                              ),
+                              
+                              // Gold
+                              Expanded(
+                                child: Row(
+                              children: [
+                                Text(
+                                  '₱',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                        fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                    const SizedBox(width: 6),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                Text(
+                                  userGold.toStringAsFixed(0),
+                                  style: TextStyle(
+                                            fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.amber,
+                                  ),
+                                ),
+                                Text(
+                                          'Gold',
+                                  style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white.withOpacity(0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                                  ],
+                                ),
+                              ),
+                              
+                              // Divider
+                              Container(
+                                width: 1,
+                                height: 30,
+                                color: Colors.white.withOpacity(0.1),
+                              ),
+                              
+                              // Rank
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      rankRewards.rankIcon,
+                                      color: rankRewards.rankColor,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            rankRewards.title,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: rankRewards.rankColor,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            'Rank',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.white.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Rank Progress
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 53, 51, 51),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: rankRewards.rankColor.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Row(
                             children: [
                               Icon(
@@ -209,149 +471,18 @@ class _DashboardState extends State<Dashboard> {
                                 color: rankRewards.rankColor,
                                 size: 20,
                               ),
-                              SizedBox(width: 8),
-                              Text(
-                                rankRewards.title,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: rankRewards.rankColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            rankRewards.description,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 24),
-
-                    // Stats Cards
-                    Row(
-                      children: [
-                        // XP Card
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: Colors.green.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.show_chart,
-                                  color: Colors.green,
-                                  size: 32,
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  totalXP.toStringAsFixed(0),
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                                Text(
-                                  'Total XP',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        // Gold Card
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: Colors.amber.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  '₱',
-                                  style: TextStyle(
-                                    color: Colors.amber,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  userGold.toStringAsFixed(0),
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber,
-                                  ),
-                                ),
-                                Text(
-                                  'Total Gold',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-
-                    // Rank Progress
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Color.fromARGB(255, 53, 51, 51),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: rankRewards.rankColor.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                rankRewards.rankIcon,
-                                color: rankRewards.rankColor,
-                                size: 24,
-                              ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Text(
                                 'Rank Progress',
-                                style: TextStyle(
-                                  fontSize: 18,
+                                style: const TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -369,7 +500,7 @@ class _DashboardState extends State<Dashboard> {
                                     Text(
                                       '${totalXP.toInt()} / ${(totalXP + xpRequired).toInt()} XP',
                                       style: TextStyle(
-                                        color: Colors.white70,
+                                        color: Colors.white.withOpacity(0.7),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -378,7 +509,7 @@ class _DashboardState extends State<Dashboard> {
                               ),
                               if (xpRequired > 0)
                                 Text(
-                                  '${xpRequired} XP to next rank',
+                                  '${xpRequired} XP to next',
                                   style: TextStyle(
                                     color: rankRewards.rankColor,
                                     fontSize: 12,
@@ -387,7 +518,7 @@ class _DashboardState extends State<Dashboard> {
                                 ),
                             ],
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           LinearProgressIndicator(
                             value: rankProgress,
                             backgroundColor: Colors.grey[700],
@@ -398,14 +529,14 @@ class _DashboardState extends State<Dashboard> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Quest Progress
                     Container(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color.fromARGB(255, 53, 51, 51),
-                        borderRadius: BorderRadius.circular(15),
+                        color: const Color.fromARGB(255, 53, 51, 51),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,21 +545,21 @@ class _DashboardState extends State<Dashboard> {
                             children: [
                               Icon(
                                 Icons.task,
-                                color: Color.fromARGB(255, 172, 245, 0),
-                                size: 24,
+                                color: const Color.fromARGB(255, 172, 245, 0),
+                                size: 20,
                               ),
-                              SizedBox(width: 8),
-                              Text(
+                              const SizedBox(width: 8),
+                              const Text(
                                 'Quest Progress',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -436,15 +567,18 @@ class _DashboardState extends State<Dashboard> {
                                   children: [
                                     Text(
                                       completedQuests.toString(),
-                                      style: TextStyle(
-                                        fontSize: 24,
+                                      style: const TextStyle(
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
                                         color: Color.fromARGB(255, 172, 245, 0),
                                       ),
                                     ),
                                     Text(
                                       'Completed',
-                                      style: TextStyle(color: Colors.white70),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -454,15 +588,18 @@ class _DashboardState extends State<Dashboard> {
                                   children: [
                                     Text(
                                       pendingQuests.toString(),
-                                      style: TextStyle(
-                                        fontSize: 24,
+                                      style: const TextStyle(
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.orange,
+                                        color: Color.fromARGB(255, 255, 0, 0),
                                       ),
                                     ),
                                     Text(
                                       'Pending',
-                                      style: TextStyle(color: Colors.white70),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -472,15 +609,18 @@ class _DashboardState extends State<Dashboard> {
                                   children: [
                                     Text(
                                       dailyStreak.toString(),
-                                      style: TextStyle(
-                                        fontSize: 24,
+                                      style: const TextStyle(
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
+                                        color: Color.fromARGB(255, 253, 132, 3),
                                       ),
                                     ),
                                     Text(
                                       'Day Streak',
-                                      style: TextStyle(color: Colors.white70),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -490,7 +630,119 @@ class _DashboardState extends State<Dashboard> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 16),
+
+                    // Active Effects Section
+                    if (xpBoosterActive || goldBoosterActive || streakProtectionActive)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 53, 51, 51),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.flash_on,
+                                  color: const Color.fromARGB(255, 172, 245, 0),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Active Effects',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            if (xpBoosterActive)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.trending_up, color: Colors.green, size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'XP Booster Active ($xpBoosterQuestsLeft quests left)',
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (goldBoosterActive)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.account_balance, color: Colors.amber, size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Gold Booster Active ($goldBoosterQuestsLeft quests left)',
+                                        style: const TextStyle(
+                                          color: Colors.amber,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (streakProtectionActive)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.shield, color: Colors.blue, size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: const Text(
+                                        'Streak Protection Active',
+                                        style: TextStyle(
+                                          color: Colors.blue,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
 
                     // Recent Completed Quests
                     Text(
@@ -722,6 +974,7 @@ class _DashboardState extends State<Dashboard> {
                   ],
                 ),
               ),
+            ),
       ),
     );
   }

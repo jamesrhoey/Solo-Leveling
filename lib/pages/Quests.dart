@@ -29,6 +29,7 @@ class Quests {
   DateTime? completedAt;
   int streak; // For daily quests
   String? notes;
+  double? finalExpEarned; // Store the final XP earned after all multipliers
 
   Quests({
     required this.title,
@@ -44,6 +45,7 @@ class Quests {
     this.completedAt,
     this.streak = 0,
     this.notes,
+    this.finalExpEarned,
   });
 
   // Calculate XP based on difficulty and streak

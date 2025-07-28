@@ -297,4 +297,28 @@ class UserService {
       'progress': progress,
     };
   }
+
+  // Check if there are affordable items in the shop
+  static Future<bool> hasAffordableItems() async {
+    final userGold = await getUserGold();
+    final unlockedAvatars = await getUnlockedAvatars();
+    
+    // Check shop items
+    final shopItems = ShopItems.getAllItems();
+    for (final item in shopItems) {
+      if (item.cost <= userGold) {
+        return true; // Found an affordable item
+      }
+    }
+    
+    // Check avatars (only unlocked ones can be purchased)
+    final allAvatars = AvatarCollection.getAllAvatars();
+    for (final avatar in allAvatars) {
+      if (!unlockedAvatars.contains(avatar.id) && avatar.cost <= userGold) {
+        return true; // Found an affordable avatar
+      }
+    }
+    
+    return false; // No affordable items found
+  }
 }

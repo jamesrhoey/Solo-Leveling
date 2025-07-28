@@ -41,7 +41,11 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [Dashboard(), Listitems(), Settings()];
+  final List<Widget> _pages = [
+    Dashboard(), 
+    Listitems(), 
+    Settings()
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -65,10 +69,7 @@ class _MainNavigationState extends State<MainNavigation> {
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Quests'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Settings',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
           ],
         ),
       ),

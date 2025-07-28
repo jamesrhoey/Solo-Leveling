@@ -76,7 +76,16 @@ class QuestService {
         if (newStatus == QuestStatus.completed) {
           quest.completedAt = DateTime.now();
           if (quest.isDaily) {
-            quest.streak++;
+            // Check if streak protection is active
+            final isStreakProtectionActive = await UserService.isStreakProtectionActive();
+            
+            if (isStreakProtectionActive) {
+              // Streak protection is active, don't increment streak but don't lose it either
+              // The streak remains the same
+            } else {
+              // Normal streak increment
+              quest.streak++;
+            }
           }
 
           // Apply boosters and add rewards to user
@@ -100,8 +109,19 @@ class QuestService {
             await UserService.consumeGoldBooster();
           }
 
+          // Apply ranking system XP multiplier
+          final currentStats = await getQuestStats();
+          final currentTotalXP = currentStats['totalXP'];
+          final rankInfo = await UserService.getRankInfo(currentTotalXP);
+          final rankRewards = rankInfo['rankRewards'];
+          final xpMultiplier = rankRewards.xpMultiplier;
+          finalExp *= xpMultiplier;
+
           // Add rewards to user
           await UserService.addGold(finalGold.toInt());
+          
+          // Store the final XP earned for this quest
+          quest.finalExpEarned = finalExp;
         }
         questsJson[i] = _questToJson(quest);
         break;
@@ -109,6 +129,28 @@ class QuestService {
     }
 
     await prefs.setStringList(_questsKey, questsJson);
+  }
+
+  // Delete a quest
+  static Future<bool> deleteQuest(String questTitle) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> questsJson = prefs.getStringList(_questsKey) ?? [];
+
+    for (int i = 0; i < questsJson.length; i++) {
+      final quest = _questFromJson(questsJson[i]);
+      if (quest.title == questTitle) {
+        // Only allow deletion of incomplete quests
+        if (quest.status == QuestStatus.completed || quest.status == QuestStatus.failed) {
+          return false; // Cannot delete completed or failed quests
+        }
+        
+        questsJson.removeAt(i);
+        await prefs.setStringList(_questsKey, questsJson);
+        return true;
+      }
+    }
+    
+    return false; // Quest not found
   }
 
   // Get quest statistics
@@ -127,7 +169,7 @@ class QuestService {
 
     double totalXP = allQuests
         .where((q) => q.status == QuestStatus.completed)
-        .fold(0.0, (sum, q) => sum + q.calculatedExp);
+        .fold(0.0, (sum, q) => sum + (q.finalExpEarned ?? q.calculatedExp));
 
     double totalGold = allQuests
         .where((q) => q.status == QuestStatus.completed)
@@ -194,6 +236,27 @@ class QuestService {
     return streak;
   }
 
+  // Check and handle daily quest streak loss
+  static Future<void> checkDailyQuestStreakLoss() async {
+    final allQuests = await getAllQuests();
+    final dailyQuests = allQuests.where((q) => q.isDaily).toList();
+    
+    for (final quest in dailyQuests) {
+      if (quest.status == QuestStatus.pending || quest.status == QuestStatus.inProgress) {
+        if (quest.deadline != null && quest.isOverdue) {
+          // Check if streak protection is active
+          final isStreakProtectionActive = await UserService.isStreakProtectionActive();
+          
+          if (!isStreakProtectionActive) {
+            // Reset streak if protection is not active
+            quest.streak = 0;
+            await updateQuest(quest);
+          }
+        }
+      }
+    }
+  }
+
   // Convert quest to JSON
   static String _questToJson(Quests quest) {
     return jsonEncode({
@@ -210,6 +273,7 @@ class QuestService {
       'completedAt': quest.completedAt?.toIso8601String(),
       'streak': quest.streak,
       'notes': quest.notes,
+      'finalExpEarned': quest.finalExpEarned,
     });
   }
 
@@ -236,6 +300,7 @@ class QuestService {
           : null,
       streak: json['streak'] ?? 0,
       notes: json['notes'],
+      finalExpEarned: json['finalExpEarned']?.toDouble(),
     );
   }
 
