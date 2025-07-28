@@ -72,7 +72,7 @@ class ShopItems {
         description: 'Get 1.5x gold for your next 5 quests',
         cost: 800,
         type: ItemType.goldBooster,
-        icon: Icons.attach_money,
+        icon: Icons.account_balance, // Changed from attach_money to account_balance
         color: Colors.amber,
         quantity: 5,
       ),

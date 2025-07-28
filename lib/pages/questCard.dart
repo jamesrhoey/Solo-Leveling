@@ -238,7 +238,14 @@ class ItemCard extends StatelessWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        Icon(Icons.attach_money, size: 18, color: Colors.amber),
+                        Text(
+                          '₱',
+                          style: TextStyle(
+                            color: Colors.amber,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         SizedBox(width: 4),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

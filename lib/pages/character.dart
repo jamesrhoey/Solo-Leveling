@@ -420,7 +420,7 @@ class _CharacterState extends State<Character> {
                                 child: _buildStatCard(
                                   'Gold',
                                   userGold.toString(),
-                                  Icons.attach_money,
+                                  '₱', // Changed from Icons.attach_money to peso symbol
                                   Colors.amber,
                                 ),
                               ),
@@ -612,7 +612,7 @@ class _CharacterState extends State<Character> {
   Widget _buildStatCard(
     String title,
     String value,
-    IconData icon,
+    dynamic icon, // Changed from IconData to dynamic to support both IconData and String
     Color color,
   ) {
     return Container(
@@ -624,7 +624,16 @@ class _CharacterState extends State<Character> {
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
+          icon is IconData
+              ? Icon(icon, color: color, size: 24)
+              : Text(
+                  icon,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
           SizedBox(height: 8),
           Text(
             value,

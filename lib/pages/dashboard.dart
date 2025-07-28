@@ -104,6 +104,7 @@ class _DashboardState extends State<Dashboard> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 28, 27, 23),
+        automaticallyImplyLeading: false, // Remove back button
         title: Container(
           decoration: BoxDecoration(
             border: Border(
@@ -287,10 +288,13 @@ class _DashboardState extends State<Dashboard> {
                             ),
                             child: Column(
                               children: [
-                                Icon(
-                                  Icons.attach_money,
-                                  color: Colors.amber,
-                                  size: 32,
+                                Text(
+                                  '₱',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 SizedBox(height: 8),
                                 Text(
@@ -673,10 +677,13 @@ class _DashboardState extends State<Dashboard> {
                                       SizedBox(height: 8),
                                       Row(
                                         children: [
-                                          Icon(
-                                            Icons.attach_money,
-                                            size: 12,
-                                            color: Colors.amber,
+                                          Text(
+                                            '₱',
+                                            style: TextStyle(
+                                              color: Colors.amber,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                           Text(
                                             quest.calculatedGold

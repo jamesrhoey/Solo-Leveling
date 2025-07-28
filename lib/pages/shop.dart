@@ -106,7 +106,14 @@ class _ShopState extends State<Shop> {
             padding: const EdgeInsets.only(right: 16.0),
             child: Row(
               children: [
-                Icon(Icons.attach_money, color: Colors.amber, size: 20),
+                Text(
+                  '₱',
+                  style: TextStyle(
+                    color: Colors.amber,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 SizedBox(width: 4),
                 Text(
                   userGold.toString(),
@@ -234,7 +241,14 @@ class _ShopState extends State<Shop> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.attach_money, color: Colors.amber, size: 16),
+                      Text(
+                        '₱',
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       Text(
                         item.cost.toString(),
                         style: TextStyle(
@@ -271,12 +285,12 @@ class _ShopState extends State<Shop> {
     final avatars = AvatarCollection.getAllAvatars();
 
     return GridView.builder(
-      padding: EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.9,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        childAspectRatio: 0.8,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
       itemCount: avatars.length,
       itemBuilder: (context, index) {
@@ -284,187 +298,379 @@ class _ShopState extends State<Shop> {
         final isUnlocked = unlockedAvatars.contains(avatar.id);
         final isOwned = isUnlocked;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Color.fromARGB(255, 53, 51, 51),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isOwned
-                  ? avatar.color.withOpacity(0.5)
-                  : Colors.grey.withOpacity(0.3),
-            ),
-          ),
-          child: Column(
-            children: [
-              // Avatar icon
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: avatar.color.withOpacity(0.1),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      avatar.imagePath,
-                      fit: BoxFit.cover,
-                      width: 48,
-                      height: 48,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: Colors.grey[300],
-                        child: Icon(Icons.person, color: Colors.grey, size: 36),
-                      ),
-                    ),
-                  ),
+        return RepaintBoundary(
+          child: GestureDetector(
+            onTap: () {
+              _showAvatarDetails(context, avatar, isOwned);
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 53, 51, 51),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isOwned
+                      ? avatar.color.withOpacity(0.5)
+                      : Colors.grey.withOpacity(0.3),
                 ),
               ),
-
-              // Avatar info
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      avatar.name,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      avatar.description,
-                      style: TextStyle(color: Colors.white70, fontSize: 10),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-
-                    // Rarity badge
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              child: Column(
+                children: [
+                  // Avatar icon
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: avatar.rarityColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
+                        color: avatar.color.withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
                       ),
-                      child: Text(
-                        avatar.rarityText,
-                        style: TextStyle(
-                          color: avatar.rarityColor,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
+                        child: Image.asset(
+                          avatar.imagePath,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          cacheWidth: 200, // Optimize memory usage
+                          cacheHeight: 200,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey[300],
+                            child: Icon(Icons.person, color: Colors.grey, size: 48),
+                          ),
                         ),
                       ),
                     ),
-                    SizedBox(height: 4),
+                  ),
 
-                    // Price or status
-                    if (isOwned)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'OWNED',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 8,
+                  // Avatar info
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          avatar.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      )
-                    else
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.attach_money,
-                            color: Colors.amber,
-                            size: 10,
+                        const SizedBox(height: 4),
+                        Text(
+                          avatar.description,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Rarity badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: avatar.rarityColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          Text(
-                            avatar.cost.toString(),
+                          child: Text(
+                            avatar.rarityText,
                             style: TextStyle(
-                              color: Colors.amber,
+                              color: avatar.rarityColor,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
-                      ),
-
-                    SizedBox(height: 4),
-
-                    // Action button
-                    if (!isOwned)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 28,
-                        child: ElevatedButton(
-                          onPressed: userGold >= avatar.cost
-                              ? () => _purchaseAvatar(avatar.id)
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: avatar.color,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: Text('Buy', style: TextStyle(fontSize: 10)),
                         ),
-                      )
-                    else
-                      SizedBox(
-                        width: double.infinity,
-                        height: 28,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await UserService.setCurrentAvatar(avatar.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Avatar equipped!'),
-                                backgroundColor: Colors.green,
+                        const SizedBox(height: 4),
+
+                        // Price or status
+                        if (isOwned)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'OWNED',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
                             ),
-                            padding: EdgeInsets.zero,
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                '₱',
+                                style: TextStyle(
+                                  color: Colors.amber,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                avatar.cost.toString(),
+                                style: const TextStyle(
+                                  color: Colors.amber,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Text('Equip', style: TextStyle(fontSize: 10)),
-                        ),
-                      ),
-                  ],
-                ),
+
+                        const SizedBox(height: 4),
+
+                        // Action button
+                        if (!isOwned)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 32,
+                            child: ElevatedButton(
+                              onPressed: userGold >= avatar.cost
+                                  ? () => _purchaseAvatar(avatar.id)
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: avatar.color,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: const Text('Buy', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            ),
+                          )
+                        else
+                          SizedBox(
+                            width: double.infinity,
+                            height: 32,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                await UserService.setCurrentAvatar(avatar.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Avatar equipped!'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: const Text('Equip', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  void _showAvatarDetails(BuildContext context, Avatar avatar, bool isOwned) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => AvatarDetailsSheet(
+        avatar: avatar,
+        isOwned: isOwned,
+        isEquipped: false, // TODO: pass actual equipped state
+        userGold: userGold,
+        onBuy: isOwned ? null : () async {
+          Navigator.of(context).pop();
+          await _purchaseAvatar(avatar.id);
+        },
+        onEquip: isOwned ? () async {
+          Navigator.of(context).pop();
+          await UserService.setCurrentAvatar(avatar.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Avatar equipped!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } : null,
+      ),
+    );
+  }
+}
+
+class AvatarDetailsSheet extends StatelessWidget {
+  final Avatar avatar;
+  final bool isOwned;
+  final bool isEquipped;
+  final int userGold;
+  final VoidCallback? onBuy;
+  final VoidCallback? onEquip;
+
+  const AvatarDetailsSheet({
+    Key? key,
+    required this.avatar,
+    required this.isOwned,
+    required this.isEquipped,
+    required this.userGold,
+    this.onBuy,
+    this.onEquip,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Color.fromARGB(255, 28, 27, 23),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                avatar.imagePath,
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+                cacheWidth: 240, // Optimize memory usage
+                cacheHeight: 240,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Colors.grey[300],
+                  width: 120,
+                  height: 120,
+                  child: const Icon(Icons.person, color: Colors.grey, size: 64),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              avatar.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              avatar.description,
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                color: avatar.rarityColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                avatar.rarityText,
+                style: TextStyle(
+                  color: avatar.rarityColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (isOwned)
+              isEquipped
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'EQUIPPED',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  : ElevatedButton(
+                      onPressed: onEquip,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Equip', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    )
+            else
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('₱', style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(
+                        avatar.cost.toString(),
+                        style: const TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: userGold >= avatar.cost ? onBuy : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: avatar.color,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Buy', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                  if (userGold < avatar.cost)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: Text('Not enough gold!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    ),
+                ],
+              ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close', style: TextStyle(color: Colors.white70)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

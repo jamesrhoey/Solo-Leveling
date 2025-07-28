@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background circle with gradient effect -->
+    <path
+        android:fillColor="#ACF500"
+        android:pathData="M100,100m-80,0a80,80 0,1 1,160 0a80,80 0,1 1,-160 0" />
+    
+    <!-- Q letter -->
+    <path
+        android:fillColor="#0A0A0A"
+        android:pathData="M100,40C70.19,40 46,64.19 46,100C46,135.81 70.19,160 100,160C135.81,160 160,135.81 160,100C160,64.19 135.81,40 100,40ZM100,140C78.06,140 60,121.94 60,100C60,78.06 78.06,60 100,60C121.94,60 140,78.06 140,100C140,121.94 121.94,140 100,140Z" />
+    
+    <!-- Q tail -->
+    <path
+        android:fillColor="#0A0A0A"
+        android:pathData="M120,120L140,140L130,150L110,130Z" />
+    
+    <!-- Decorative ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#ACF500"
+        android:strokeWidth="3"
+        android:pathData="M100,100m-90,0a90,90 0,1 1,180 0a90,90 0,1 1,-180 0" />
+</vector> 

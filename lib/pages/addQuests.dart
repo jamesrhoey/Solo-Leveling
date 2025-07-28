@@ -238,7 +238,7 @@ class _AddQuestsState extends State<AddQuests> {
                                       ? Icons.people
                                       : category == QuestCategory.creative
                                       ? Icons.brush
-                                      : Icons.attach_money,
+                                      : Icons.account_balance, // Changed from attach_money to account_balance
                                   color: category == QuestCategory.health
                                       ? Colors.red
                                       : category == QuestCategory.learning
@@ -518,9 +518,13 @@ class _AddQuestsState extends State<AddQuests> {
                               decoration: InputDecoration(
                                 labelText: 'Base Gold',
                                 labelStyle: TextStyle(color: Colors.white),
-                                prefixIcon: Icon(
-                                  Icons.attach_money,
-                                  color: Colors.amber,
+                                prefixIcon: Text(
+                                  '₱',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),

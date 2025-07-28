@@ -13,6 +13,7 @@ class _SettingsState extends State<Settings> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 28, 27, 23),
+        automaticallyImplyLeading: false, // Remove back button
         title: Text(
           'Settings',
           style: TextStyle(

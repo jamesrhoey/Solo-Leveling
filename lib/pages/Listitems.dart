@@ -50,6 +50,64 @@ class _ListitemsState extends State<Listitems> {
     }
   }
 
+  List<Quests> get incompleteQuests {
+    return quests.where((quest) {
+      // Only show incomplete quests
+      if (quest.status == QuestStatus.completed || quest.status == QuestStatus.failed) {
+        return false;
+      }
+
+      // Category filter
+      if (selectedCategory != null && quest.category != selectedCategory) {
+        return false;
+      }
+
+      // Difficulty filter
+      if (selectedDifficulty != null &&
+          quest.difficulty != selectedDifficulty) {
+        return false;
+      }
+
+      // Search query filter
+      if (searchQuery.isNotEmpty) {
+        final query = searchQuery.toLowerCase();
+        return quest.title.toLowerCase().contains(query) ||
+            quest.description.toLowerCase().contains(query);
+      }
+
+      return true;
+    }).toList();
+  }
+
+  List<Quests> get completedQuests {
+    return quests.where((quest) {
+      // Only show completed quests
+      if (quest.status != QuestStatus.completed) {
+        return false;
+      }
+
+      // Category filter
+      if (selectedCategory != null && quest.category != selectedCategory) {
+        return false;
+      }
+
+      // Difficulty filter
+      if (selectedDifficulty != null &&
+          quest.difficulty != selectedDifficulty) {
+        return false;
+      }
+
+      // Search query filter
+      if (searchQuery.isNotEmpty) {
+        final query = searchQuery.toLowerCase();
+        return quest.title.toLowerCase().contains(query) ||
+            quest.description.toLowerCase().contains(query);
+      }
+
+      return true;
+    }).toList();
+  }
+
   List<Quests> get filteredQuests {
     return quests.where((quest) {
       // Category filter
@@ -203,7 +261,14 @@ class _ListitemsState extends State<Listitems> {
               ],
               Row(
                 children: [
-                  Icon(Icons.attach_money, color: Colors.amber, size: 20),
+                  Text(
+                    '₱',
+                    style: TextStyle(
+                      color: Colors.amber,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   SizedBox(width: 8),
                   Text(
                     '${quest.calculatedGold.toStringAsFixed(0)} Gold',
@@ -316,6 +381,7 @@ class _ListitemsState extends State<Listitems> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 28, 27, 23),
+        automaticallyImplyLeading: false, // Remove back button
         title: Text(
           'Quests',
           style: TextStyle(
@@ -438,7 +504,7 @@ class _ListitemsState extends State<Listitems> {
                         color: Color.fromARGB(255, 172, 245, 0),
                       ),
                     )
-                  : filteredQuests.isEmpty
+                  : (incompleteQuests.isEmpty && completedQuests.isEmpty)
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -466,16 +532,80 @@ class _ListitemsState extends State<Listitems> {
                         ],
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: filteredQuests.length,
-                      itemBuilder: (context, index) {
-                        return ItemCard(
-                          quests: filteredQuests[index],
-                          onTap: () => _showQuestDetails(filteredQuests[index]),
-                          onStatusChange: () =>
-                              _updateQuestStatus(filteredQuests[index]),
-                        );
-                      },
+                  : ListView(
+                      padding: EdgeInsets.all(16),
+                      children: [
+                        // Incomplete Quests Section
+                        if (incompleteQuests.isNotEmpty) ...[
+                          // Section Header
+                          Container(
+                            margin: EdgeInsets.only(bottom: 16),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.pending_actions,
+                                  color: Color.fromARGB(255, 172, 245, 0),
+                                  size: 24,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Active Quests (${incompleteQuests.length})',
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 172, 245, 0),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Incomplete quests
+                          ...incompleteQuests.map((quest) => Container(
+                            margin: EdgeInsets.only(bottom: 12),
+                            child: ItemCard(
+                              quests: quest,
+                              onTap: () => _showQuestDetails(quest),
+                              onStatusChange: () => _updateQuestStatus(quest),
+                            ),
+                          )),
+                          SizedBox(height: 24),
+                        ],
+
+                        // Completed Quests Section
+                        if (completedQuests.isNotEmpty) ...[
+                          // Section Header
+                          Container(
+                            margin: EdgeInsets.only(bottom: 16),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.task_alt,
+                                  color: Colors.green,
+                                  size: 24,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Completed Quests (${completedQuests.length})',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Completed quests
+                          ...completedQuests.map((quest) => Container(
+                            margin: EdgeInsets.only(bottom: 12),
+                            child: ItemCard(
+                              quests: quest,
+                              onTap: () => _showQuestDetails(quest),
+                              onStatusChange: () => _updateQuestStatus(quest),
+                            ),
+                          )),
+                        ],
+                      ],
                     ),
             ),
           ],
@@ -486,7 +616,10 @@ class _ListitemsState extends State<Listitems> {
           Navigator.pushNamed(context, '/add');
         },
         backgroundColor: Color.fromARGB(255, 172, 245, 0),
-        child: Icon(Icons.add),
+        child: Icon(
+          Icons.add,
+          color: Colors.black, // Changed from default white to black for better contrast
+        ),
       ),
     );
   }

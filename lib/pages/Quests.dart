@@ -170,7 +170,7 @@ class Quests {
       case QuestCategory.creative:
         return Icons.brush;
       case QuestCategory.financial:
-        return Icons.attach_money;
+        return Icons.account_balance; // Changed from attach_money to account_balance
     }
   }
 
